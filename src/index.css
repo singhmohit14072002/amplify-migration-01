@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --text: #a5a69b;
+  --text-h: #f1eee7;
+  --bg: #111310;
+  --border: #30312b;
+  --code-bg: #22231e;
+  --accent: #e7a95c;
+  --accent-bg: rgba(231, 169, 92, 0.1);
+  --accent-border: rgba(231, 169, 92, 0.5);
+  --social-bg: #191b17;
+  --ink: #f1eee7;
+  --muted: #8d8e83;
+  --quiet: #65675e;
+  --line: #30312b;
+  --accent-bright: #f4c77d;
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --sans: 'DM Sans', sans-serif;
+  --heading: 'Manrope', sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0;
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #a5a69b;
+    --text-h: #f1eee7;
+    --bg: #111310;
+    --border: #30312b;
+    --code-bg: #22231e;
+    --accent: #e7a95c;
+    --accent-bg: rgba(231, 169, 92, 0.1);
+    --accent-border: rgba(231, 169, 92, 0.5);
+    --social-bg: #191b17;
+    --shadow:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  }
+
+  #social .button-icon {
+    filter: invert(1) brightness(2);
+  }
+}
+
+body { min-width: 320px; min-height: 100vh; margin: 0; background: var(--bg); }
+
+#root { width: 100%; max-width: none; min-height: 100svh; margin: 0; text-align: left; border: 0; display: block; box-sizing: border-box; }
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 { margin: 0; }
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+}
+p {
+  margin: 0;
+}
+
+code {
+  font-family: var(--mono);
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
