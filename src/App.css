@@ -284,6 +284,8 @@
 .dialog-original span, .dialog-rating span { padding: 0 4px; color: #78796f; }
 .dialog-rating { display: flex; align-items: center; gap: 5px; margin-top: 18px; color: var(--accent-bright); font-size: 10px; }
 .dialog-synopsis { margin: 13px 0 20px; color: #ccc9be; font-size: 12px; line-height: 1.8; }
+.dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.button:disabled { cursor: wait; opacity: .65; transform: none; }
 .toast { position: fixed; z-index: 12; right: 24px; bottom: 24px; display: flex; align-items: center; gap: 9px; padding: 12px 15px; border: 1px solid #62543d; color: #f2eadb; background: #24251f; font-size: 11px; box-shadow: 0 8px 28px rgba(0,0,0,.35); animation: rise-in .2s ease both; }
 .toast svg { color: var(--accent-bright); }
 @keyframes rise-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }

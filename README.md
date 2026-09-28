@@ -15,6 +15,22 @@ The sample catalogue is bundled in `src/data/catalog.json`, so the app works wit
 
 Set the environment variable in Amplify's app build settings. `.env.example` shows the expected format. When the remote catalogue cannot be loaded, the bundled sample data remains available.
 
+The film detail dialog includes a download button. For it to work, each `poster` (or optional `downloadUrl`) must point to an image object that is readable without AWS credentials. Configure the S3 bucket CORS policy with your Amplify domain:
+
+```json
+[
+	{
+		"AllowedOrigins": ["https://main.xxxxxxxxxxxxx.amplifyapp.com"],
+		"AllowedMethods": ["GET", "HEAD"],
+		"AllowedHeaders": ["*"],
+		"ExposeHeaders": ["Content-Length", "Content-Type"],
+		"MaxAgeSeconds": 3600
+	}
+]
+```
+
+In Amplify, open **Hosting > Build settings > Environment variables**, add `VITE_S3_CATALOG_URL` with the catalogue object's HTTPS URL, and trigger a new deployment. Vite embeds `VITE_` variables during the build. Never put AWS access keys in this frontend.
+
 ## Deploy with AWS Amplify Hosting
 
 Connect this repository in Amplify. The included `amplify.yml` runs `npm ci` and `npm run build`, then publishes `dist/`. No server-side rendering or backend resources are required.

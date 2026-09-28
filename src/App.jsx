@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowDownRight, ArrowRight, Bookmark, Check, ChevronDown, Clapperboard,
+  ArrowDownRight, ArrowRight, Bookmark, Check, ChevronDown, Clapperboard, Download,
   Film, Heart, Play, Search, Sparkles, X,
 } from 'lucide-react'
 import bundledCatalog from './data/catalog.json'
@@ -27,6 +27,7 @@ function App() {
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [brokenPosters, setBrokenPosters] = useState([])
   const [notice, setNotice] = useState('')
+  const [downloadingId, setDownloadingId] = useState(null)
 
   useEffect(() => {
     if (!catalogUrl) return undefined
@@ -77,6 +78,29 @@ function App() {
     const isSaved = watchlist.includes(movie.id)
     setWatchlist((current) => isSaved ? current.filter((id) => id !== movie.id) : [...current, movie.id])
     setNotice(isSaved ? 'Removed from your list' : 'Saved to your list')
+  }
+
+  async function downloadArtwork(movie) {
+    const imageUrl = movie.downloadUrl || movie.poster
+    setDownloadingId(movie.id)
+    try {
+      const response = await fetch(imageUrl)
+      if (!response.ok) throw new Error('Artwork unavailable')
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.download = `${movie.id}-poster${imageUrl.match(/\.[a-z0-9]+(?:[?#]|$)/i)?.[0].replace(/[?#].*$/, '') || '.jpg'}`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(objectUrl)
+      setNotice('Download started')
+    } catch {
+      setNotice('Download unavailable: check the S3 CORS settings')
+    } finally {
+      setDownloadingId(null)
+    }
   }
 
   return (
@@ -158,7 +182,7 @@ function App() {
         <section className="film-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
           <button className="dialog-close icon-button" onClick={() => setSelectedMovie(null)} aria-label="Close film details"><X size={19} /></button>
           {brokenPosters.includes(selectedMovie.id) ? <div className="dialog-art-fallback" /> : <img className="dialog-art" src={selectedMovie.poster} alt="" onError={() => setBrokenPosters((current) => [...current, selectedMovie.id])} />}<div className="dialog-shade" />
-          <div className="dialog-content"><p className="eyebrow"><span className="eyebrow-rule" /> {selectedMovie.year} · {selectedMovie.runtime} MIN</p><h2 id="dialog-title">{selectedMovie.title}</h2><p className="dialog-original">{selectedMovie.originalTitle} <span>·</span> Directed by {selectedMovie.director}</p><div className="dialog-rating"><Sparkles size={14} fill="currentColor" /> {selectedMovie.rating} <span>·</span> {selectedMovie.genres.join(' / ')}</div><p className="dialog-synopsis">{selectedMovie.synopsis}</p><button className="button button-primary" onClick={() => toggleWatchlist(selectedMovie)}>{watchlist.includes(selectedMovie.id) ? <Check size={16} /> : <Bookmark size={16} />}{watchlist.includes(selectedMovie.id) ? 'Saved to my list' : 'Add to my list'}</button></div>
+          <div className="dialog-content"><p className="eyebrow"><span className="eyebrow-rule" /> {selectedMovie.year} · {selectedMovie.runtime} MIN</p><h2 id="dialog-title">{selectedMovie.title}</h2><p className="dialog-original">{selectedMovie.originalTitle} <span>·</span> Directed by {selectedMovie.director}</p><div className="dialog-rating"><Sparkles size={14} fill="currentColor" /> {selectedMovie.rating} <span>·</span> {selectedMovie.genres.join(' / ')}</div><p className="dialog-synopsis">{selectedMovie.synopsis}</p><div className="dialog-actions"><button className="button button-primary" onClick={() => toggleWatchlist(selectedMovie)}>{watchlist.includes(selectedMovie.id) ? <Check size={16} /> : <Bookmark size={16} />}{watchlist.includes(selectedMovie.id) ? 'Saved to my list' : 'Add to my list'}</button><button className="button button-quiet" onClick={() => downloadArtwork(selectedMovie)} disabled={downloadingId === selectedMovie.id} title="Download artwork"><Download size={16} />{downloadingId === selectedMovie.id ? 'Preparing...' : 'Download image'}</button></div></div>
         </section>
       </div>}
       {notice && <div className="toast" role="status"><Check size={15} />{notice}</div>}
