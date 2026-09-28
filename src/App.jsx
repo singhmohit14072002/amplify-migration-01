@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchAuthSession, signIn, signOut } from 'aws-amplify/auth'
+import { confirmSignUp, fetchAuthSession, signIn, signOut, signUp } from 'aws-amplify/auth'
 import { uploadData } from 'aws-amplify/storage'
 import {
   ArrowDownRight, ArrowRight, Bookmark, Check, ChevronDown, Clapperboard, Download,
@@ -36,6 +36,8 @@ function App() {
   const [signedIn, setSignedIn] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmationCode, setConfirmationCode] = useState('')
+  const [authMode, setAuthMode] = useState('signIn')
 
   useEffect(() => {
     if (!catalogUrl) return undefined
@@ -155,6 +157,29 @@ function App() {
     }
   }
 
+  async function handleSignUp(event) {
+    event.preventDefault()
+    try {
+      await signUp({ username: email, password, options: { userAttributes: { email } } })
+      setAuthMode('confirm')
+      setNotice('Check your email for the confirmation code')
+    } catch {
+      setNotice('Sign-up failed. Use a valid email and password')
+    }
+  }
+
+  async function handleConfirmation(event) {
+    event.preventDefault()
+    try {
+      await confirmSignUp({ username: email, confirmationCode })
+      setAuthMode('signIn')
+      setConfirmationCode('')
+      setNotice('Email confirmed. You can sign in now')
+    } catch {
+      setNotice('Confirmation failed. Check the code and try again')
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -225,7 +250,7 @@ function App() {
 
         <section className="upload-section" aria-labelledby="upload-title">
           <div><p className="eyebrow section-eyebrow"><span className="eyebrow-rule" /> SHARE THE NEXT STORY</p><h2 id="upload-title">Upload an anime image</h2><p className="upload-copy">Add artwork for the community. Images are stored in our S3 library.</p></div>
-          {!signedIn ? <form className="auth-form" onSubmit={handleSignIn}><label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="button button-primary" type="submit">Sign in to upload</button></form> : <><form className="upload-form" onSubmit={uploadArtwork}><label>Anime title<input type="text" value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} placeholder="Enter a film title" maxLength={100} /></label><label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label><button className="button button-primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload to S3'}</button></form><button className="upload-signout" onClick={() => { signOut(); setSignedIn(false) }}>Sign out</button></>}
+          {!signedIn && authMode === 'confirm' ? <form className="auth-form" onSubmit={handleConfirmation}><label>Confirmation code<input inputMode="numeric" value={confirmationCode} onChange={(event) => setConfirmationCode(event.target.value)} required /></label><button className="button button-primary" type="submit">Confirm email</button></form> : !signedIn ? <><form className="auth-form" onSubmit={authMode === 'signIn' ? handleSignIn : handleSignUp}><label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} required /></label><button className="button button-primary" type="submit">{authMode === 'signIn' ? 'Sign in to upload' : 'Create upload account'}</button></form><button className="upload-signout" onClick={() => setAuthMode(authMode === 'signIn' ? 'signUp' : 'signIn')}>{authMode === 'signIn' ? 'Create an account' : 'Already have an account? Sign in'}</button></> : <><form className="upload-form" onSubmit={uploadArtwork}><label>Anime title<input type="text" value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} placeholder="Enter a film title" maxLength={100} /></label><label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label><button className="button button-primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload to S3'}</button></form><button className="upload-signout" onClick={() => { signOut(); setSignedIn(false) }}>Sign out</button></>}
         </section>
 
         <footer className="site-footer">
