@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { confirmSignUp, fetchAuthSession, signIn, signOut, signUp } from 'aws-amplify/auth'
 import { uploadData } from 'aws-amplify/storage'
 import {
   ArrowDownRight, ArrowRight, Bookmark, Check, ChevronDown, Clapperboard, Download,
@@ -33,11 +32,6 @@ function App() {
   const [uploadFile, setUploadFile] = useState(null)
   const [uploadTitle, setUploadTitle] = useState('')
   const [uploading, setUploading] = useState(false)
-  const [signedIn, setSignedIn] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmationCode, setConfirmationCode] = useState('')
-  const [authMode, setAuthMode] = useState('signIn')
 
   useEffect(() => {
     if (!catalogUrl) return undefined
@@ -60,10 +54,6 @@ function App() {
         }
       })
     return () => { active = false }
-  }, [])
-
-  useEffect(() => {
-    fetchAuthSession().then((session) => setSignedIn(Boolean(session.tokens?.accessToken))).catch(() => setSignedIn(false))
   }, [])
 
   useEffect(() => {
@@ -123,10 +113,6 @@ function App() {
       setNotice('Choose an image and enter a title first')
       return
     }
-    if (!signedIn) {
-      setNotice('Sign in before uploading')
-      return
-    }
     setUploading(true)
     try {
       await uploadData({
@@ -142,41 +128,6 @@ function App() {
       setNotice('Upload failed. Check the upload service and S3 CORS settings')
     } finally {
       setUploading(false)
-    }
-  }
-
-  async function handleSignIn(event) {
-    event.preventDefault()
-    try {
-      await signIn({ username: email, password })
-      setSignedIn(true)
-      setPassword('')
-      setNotice('Signed in successfully')
-    } catch {
-      setNotice('Sign in failed. Check your email and password')
-    }
-  }
-
-  async function handleSignUp(event) {
-    event.preventDefault()
-    try {
-      await signUp({ username: email, password, options: { userAttributes: { email } } })
-      setAuthMode('confirm')
-      setNotice('Check your email for the confirmation code')
-    } catch {
-      setNotice('Sign-up failed. Use a valid email and password')
-    }
-  }
-
-  async function handleConfirmation(event) {
-    event.preventDefault()
-    try {
-      await confirmSignUp({ username: email, confirmationCode })
-      setAuthMode('signIn')
-      setConfirmationCode('')
-      setNotice('Email confirmed. You can sign in now')
-    } catch {
-      setNotice('Confirmation failed. Check the code and try again')
     }
   }
 
@@ -250,7 +201,7 @@ function App() {
 
         <section className="upload-section" aria-labelledby="upload-title">
           <div><p className="eyebrow section-eyebrow"><span className="eyebrow-rule" /> SHARE THE NEXT STORY</p><h2 id="upload-title">Upload an anime image</h2><p className="upload-copy">Add artwork for the community. Images are stored in our S3 library.</p></div>
-          {!signedIn && authMode === 'confirm' ? <form className="auth-form" onSubmit={handleConfirmation}><label>Confirmation code<input inputMode="numeric" value={confirmationCode} onChange={(event) => setConfirmationCode(event.target.value)} required /></label><button className="button button-primary" type="submit">Confirm email</button></form> : !signedIn ? <><form className="auth-form" onSubmit={authMode === 'signIn' ? handleSignIn : handleSignUp}><label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} required /></label><button className="button button-primary" type="submit">{authMode === 'signIn' ? 'Sign in to upload' : 'Create upload account'}</button></form><button className="upload-signout" onClick={() => setAuthMode(authMode === 'signIn' ? 'signUp' : 'signIn')}>{authMode === 'signIn' ? 'Create an account' : 'Already have an account? Sign in'}</button></> : <><form className="upload-form" onSubmit={uploadArtwork}><label>Anime title<input type="text" value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} placeholder="Enter a film title" maxLength={100} /></label><label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label><button className="button button-primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload to S3'}</button></form><button className="upload-signout" onClick={() => { signOut(); setSignedIn(false) }}>Sign out</button></>}
+          <form className="upload-form" onSubmit={uploadArtwork}><label>Anime title<input type="text" value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} placeholder="Enter a film title" maxLength={100} /></label><label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label><button className="button button-primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload to S3'}</button></form><p className="upload-note">Anyone can upload. Files are stored in public S3 storage.</p>
         </section>
 
         <footer className="site-footer">

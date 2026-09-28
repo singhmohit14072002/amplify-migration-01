@@ -33,7 +33,7 @@ In Amplify, open **Hosting > Build settings > Environment variables**, add `VITE
 
 ## Uploading images with Amplify Storage
 
-The upload form uses Amplify Gen 2 Storage. Visitors can read `public/*` images, while only signed-in Cognito users can upload or delete them. Run `npm run sandbox` locally to create the Cognito and S3 resources and generate `amplify_outputs.json`. For Amplify Hosting, the build runs `ampx pipeline-deploy` before the Vite build. Do not add AWS access keys to the React app or make the S3 bucket publicly writable.
+The upload form uses Amplify Gen 2 Storage. Anyone can read and upload images under `public/*`; only signed-in Cognito users can delete them. Run `npm run sandbox` locally to create the Cognito and S3 resources and generate `amplify_outputs.json`. For Amplify Hosting, the build runs `ampx pipeline-deploy` before the Vite build. This public-upload setup can be abused and create storage costs; add authentication, file-size limits, moderation, and rate limiting before using it in production. Do not add AWS access keys to the React app.
 
 ## Deploy with AWS Amplify Hosting
 
