@@ -8,6 +8,7 @@ import './App.css'
 
 const genres = ['All films', 'Fantasy', 'Romance', 'Drama', 'Adventure', 'Sci-fi']
 const catalogUrl = import.meta.env.VITE_S3_CATALOG_URL
+const uploadUrl = import.meta.env.VITE_S3_UPLOAD_URL
 
 function readWatchlist() {
   try {
@@ -28,6 +29,9 @@ function App() {
   const [brokenPosters, setBrokenPosters] = useState([])
   const [notice, setNotice] = useState('')
   const [downloadingId, setDownloadingId] = useState(null)
+  const [uploadFile, setUploadFile] = useState(null)
+  const [uploadTitle, setUploadTitle] = useState('')
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (!catalogUrl) return undefined
@@ -103,6 +107,38 @@ function App() {
     }
   }
 
+  async function uploadArtwork(event) {
+    event.preventDefault()
+    if (!uploadFile || !uploadTitle.trim()) {
+      setNotice('Choose an image and enter a title first')
+      return
+    }
+    if (!uploadUrl) {
+      setNotice('Uploads are not configured yet')
+      return
+    }
+    setUploading(true)
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: uploadFile.name, contentType: uploadFile.type, title: uploadTitle.trim() }),
+      })
+      if (!response.ok) throw new Error('Upload request failed')
+      const { uploadUrl: signedUrl } = await response.json()
+      const uploadResponse = await fetch(signedUrl, { method: 'PUT', headers: { 'Content-Type': uploadFile.type }, body: uploadFile })
+      if (!uploadResponse.ok) throw new Error('Image upload failed')
+      setUploadFile(null)
+      setUploadTitle('')
+      event.target.reset()
+      setNotice('Anime image uploaded to S3')
+    } catch {
+      setNotice('Upload failed. Check the upload service and S3 CORS settings')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -169,6 +205,15 @@ function App() {
               <div className="movie-info"><div className="movie-title-line"><h3>{movie.title}</h3><span>{movie.year}</span></div><p>{movie.genres.slice(0, 2).join(' · ')}</p></div>
             </article>)}
           </div> : <div className="empty-state"><Film size={25} /><h3>{activeView === 'watchlist' ? 'Your list is still a blank page.' : 'No films found.'}</h3><p>{activeView === 'watchlist' ? 'Save a film that catches your eye and it will be here.' : 'Try another title or choose a different genre.'}</p>{activeView === 'watchlist' && <button className="text-link" onClick={() => setActiveView('discover')}>Explore the catalogue <ArrowRight size={15} /></button>}</div>}
+        </section>
+
+        <section className="upload-section" aria-labelledby="upload-title">
+          <div><p className="eyebrow section-eyebrow"><span className="eyebrow-rule" /> SHARE THE NEXT STORY</p><h2 id="upload-title">Upload an anime image</h2><p className="upload-copy">Add artwork for the community. Images are stored in our S3 library.</p></div>
+          <form className="upload-form" onSubmit={uploadArtwork}>
+            <label>Anime title<input type="text" value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} placeholder="Enter a film title" maxLength={100} /></label>
+            <label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label>
+            <button className="button button-primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload to S3'}</button>
+          </form>
         </section>
 
         <footer className="site-footer">
