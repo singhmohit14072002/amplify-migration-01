@@ -4,21 +4,32 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "sandbox": "ampx sandbox",
+    "backend:deploy": "ampx pipeline-deploy",
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "aws-amplify": "^6.22.0",
     "lucide-react": "^1.48.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@aws-amplify/backend": "^1.25.1",
+    "@aws-amplify/backend-cli": "^1.10.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "aws-cdk-lib": "^2.271.0",
+    "constructs": "^10.8.1",
+    "esbuild": "^0.28.2",
     "oxlint": "^1.81.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
     "vite": "^8.3.0"
   }
 }

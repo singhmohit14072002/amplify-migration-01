@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { fetchAuthSession, signIn, signOut } from 'aws-amplify/auth'
+import { uploadData } from 'aws-amplify/storage'
 import {
   ArrowDownRight, ArrowRight, Bookmark, Check, ChevronDown, Clapperboard, Download,
   Film, Heart, Play, Search, Sparkles, X,
@@ -8,7 +10,6 @@ import './App.css'
 
 const genres = ['All films', 'Fantasy', 'Romance', 'Drama', 'Adventure', 'Sci-fi']
 const catalogUrl = import.meta.env.VITE_S3_CATALOG_URL
-const uploadUrl = import.meta.env.VITE_S3_UPLOAD_URL
 
 function readWatchlist() {
   try {
@@ -32,6 +33,9 @@ function App() {
   const [uploadFile, setUploadFile] = useState(null)
   const [uploadTitle, setUploadTitle] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   useEffect(() => {
     if (!catalogUrl) return undefined
@@ -54,6 +58,10 @@ function App() {
         }
       })
     return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    fetchAuthSession().then((session) => setSignedIn(Boolean(session.tokens?.accessToken))).catch(() => setSignedIn(false))
   }, [])
 
   useEffect(() => {
@@ -113,21 +121,17 @@ function App() {
       setNotice('Choose an image and enter a title first')
       return
     }
-    if (!uploadUrl) {
-      setNotice('Uploads are not configured yet')
+    if (!signedIn) {
+      setNotice('Sign in before uploading')
       return
     }
     setUploading(true)
     try {
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: uploadFile.name, contentType: uploadFile.type, title: uploadTitle.trim() }),
-      })
-      if (!response.ok) throw new Error('Upload request failed')
-      const { uploadUrl: signedUrl } = await response.json()
-      const uploadResponse = await fetch(signedUrl, { method: 'PUT', headers: { 'Content-Type': uploadFile.type }, body: uploadFile })
-      if (!uploadResponse.ok) throw new Error('Image upload failed')
+      await uploadData({
+        path: `public/${crypto.randomUUID()}-${uploadFile.name}`,
+        data: uploadFile,
+        options: { contentType: uploadFile.type },
+      }).result
       setUploadFile(null)
       setUploadTitle('')
       event.target.reset()
@@ -136,6 +140,18 @@ function App() {
       setNotice('Upload failed. Check the upload service and S3 CORS settings')
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function handleSignIn(event) {
+    event.preventDefault()
+    try {
+      await signIn({ username: email, password })
+      setSignedIn(true)
+      setPassword('')
+      setNotice('Signed in successfully')
+    } catch {
+      setNotice('Sign in failed. Check your email and password')
     }
   }
 
@@ -209,11 +225,7 @@ function App() {
 
         <section className="upload-section" aria-labelledby="upload-title">
           <div><p className="eyebrow section-eyebrow"><span className="eyebrow-rule" /> SHARE THE NEXT STORY</p><h2 id="upload-title">Upload an anime image</h2><p className="upload-copy">Add artwork for the community. Images are stored in our S3 library.</p></div>
-          <form className="upload-form" onSubmit={uploadArtwork}>
-            <label>Anime title<input type="text" value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} placeholder="Enter a film title" maxLength={100} /></label>
-            <label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label>
-            <button className="button button-primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload to S3'}</button>
-          </form>
+          {!signedIn ? <form className="auth-form" onSubmit={handleSignIn}><label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="button button-primary" type="submit">Sign in to upload</button></form> : <><form className="upload-form" onSubmit={uploadArtwork}><label>Anime title<input type="text" value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} placeholder="Enter a film title" maxLength={100} /></label><label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} /></label><button className="button button-primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload to S3'}</button></form><button className="upload-signout" onClick={() => { signOut(); setSignedIn(false) }}>Sign out</button></>}
         </section>
 
         <footer className="site-footer">

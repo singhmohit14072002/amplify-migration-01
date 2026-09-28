@@ -31,9 +31,9 @@ The film detail dialog includes a download button. For it to work, each `poster`
 
 In Amplify, open **Hosting > Build settings > Environment variables**, add `VITE_S3_CATALOG_URL` with the catalogue object's HTTPS URL, and trigger a new deployment. Vite embeds `VITE_` variables during the build. Never put AWS access keys in this frontend.
 
-## Uploading images to S3
+## Uploading images with Amplify Storage
 
-The upload form uses `VITE_S3_UPLOAD_URL`. This must be a small authenticated or rate-limited service that accepts a `POST` body such as `{ "fileName": "poster.jpg", "contentType": "image/jpeg", "title": "Film title" }` and returns `{ "uploadUrl": "https://...presigned-s3-url..." }`. The browser then uploads the image with `PUT` to that presigned URL. Configure CORS on both the upload service and S3 for the Amplify domain. Do not add AWS access keys to the React app or make the S3 bucket publicly writable.
+The upload form uses Amplify Gen 2 Storage. Visitors can read `public/*` images, while only signed-in Cognito users can upload or delete them. Run `npm run sandbox` locally to create the Cognito and S3 resources and generate `amplify_outputs.json`. For Amplify Hosting, the build runs `ampx pipeline-deploy` before the Vite build. Do not add AWS access keys to the React app or make the S3 bucket publicly writable.
 
 ## Deploy with AWS Amplify Hosting
 
